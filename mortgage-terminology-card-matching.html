@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mortgage Match</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+        body {
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+            color: #1a202c;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 960px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .grid-container {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            min-height: 400px;
+            transition: all 0.5s ease-in-out;
+        }
+
+        .matched-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            align-items: flex-end;
+            padding: 1rem;
+            min-height: 100px;
+            border-top: 2px solid #cbd5e1;
+            margin-top: auto;
+        }
+        
+        .matched-pair-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: center;
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 0.5rem;
+            background-color: #e0f2fe;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.5s ease-in-out;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            height: 150px;
+        }
+
+        .card.matched-pair {
+            width: 100px;
+            height: 100px;
+            font-size: 0.75rem;
+            padding: 0.5rem;
+            border: 2px solid #10b981;
+            background-color: #d1fae5;
+            box-shadow: none;
+            cursor: default;
+            pointer-events: none;
+            transition: all 0.5s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .card.active {
+            transform: scale(0.98);
+            border-color: #3b82f6;
+            background-color: #e0f2fe;
+            box-shadow: 0 0 0 4px #3b82f6;
+        }
+
+        .card.term {
+            background-color: #fef3c7;
+        }
+
+        .card.term.active {
+            background-color: #fde68a;
+            border-color: #fbbf24;
+            box-shadow: 0 0 0 4px #fbbf24;
+        }
+
+        .card.shaking {
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            20%, 60% {
+                transform: translateX(-5px);
+            }
+            40%, 80% {
+                transform: translateX(5px);
+            }
+        }
+
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            z-index: 50;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 40;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -40%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center p-8">
+    <div class="container mx-auto">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-center mb-4 text-slate-800">Mortgage Match</h1>
+        <p class="text-center text-lg text-slate-600 mb-8">
+            Match the mortgage terms with their correct definitions.
+        </p>
+        <div id="game-container" class="grid-container"></div>
+        <div id="matched-container" class="matched-container"></div>
+    </div>
+
+    <div id="end-game-popup" class="hidden popup-overlay">
+        <div class="popup">
+            <h2 class="text-3xl font-bold mb-4">Congratulations!</h2>
+            <p class="text-lg mb-6">You've matched all the pairs!</p>
+            <button id="restart-button" class="px-6 py-3 bg-blue-600 text-white rounded-full font-bold shadow-lg hover:bg-blue-700 transition transform hover:scale-105">
+                Play Again
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameContainer = document.getElementById('game-container');
+            const matchedContainer = document.getElementById('matched-container');
+            const endPopup = document.getElementById('end-game-popup');
+            const restartButton = document.getElementById('restart-button');
+
+            const mortgageData = [
+                { id: 1, type: 'term', text: 'Mortgage' },
+                { id: 2, type: 'definition', text: 'A type of loan that allows the lender to take possession of secured property if you don\'t repay the loan on time.', matchId: 1 },
+                { id: 3, type: 'term', text: 'Equity' },
+                { id: 4, type: 'definition', text: 'The current market value of a home or property minus the amount remaining on the mortgage.', matchId: 3 },
+                { id: 5, type: 'term', text: 'Principal' },
+                { id: 6, type: 'definition', text: 'The amount of the loan.', matchId: 5 },
+                { id: 7, type: 'term', text: 'Interest' },
+                { id: 8, type: 'definition', text: 'The amount you pay a lender for the use of the lender\'s money.', matchId: 7 },
+                { id: 9, type: 'term', text: 'Down payment' },
+                { id: 10, type: 'definition', text: 'The amount of money you deposit when you first buy your home.', matchId: 9 },
+                { id: 11, type: 'term', text: 'Amortization period' },
+                { id: 12, type: 'definition', text: 'The period of time it will take to pay off a mortgage in full.', matchId: 11 },
+                { id: 13, type: 'term', text: 'Term' },
+                { id: 14, type: 'definition', text: 'The length of time your mortgage agreement will be in effect.', matchId: 13 },
+                { id: 15, type: 'term', text: 'Open mortgage' },
+                { id: 16, type: 'definition', text: 'A mortgage that you can prepay at any time during the term, without charge.', matchId: 15 },
+                { id: 17, type: 'term', text: 'Closed mortgage' },
+                { id: 18, type: 'definition', text: 'A mortgage with a set term and fixed conditions.', matchId: 17 },
+                { id: 19, type: 'term', text: 'Variable interest rate mortgage' },
+                { id: 20, type: 'definition', text: 'A mortgage with an interest rate that can change during the term.', matchId: 19 },
+                { id: 21, type: 'term', text: 'Fixed interest rate mortgage' },
+                { id: 22, type: 'definition', text: 'A mortgage with an interest rate that does not change during the term.', matchId: 21 },
+                { id: 23, type: 'term', text: 'Variable payments' },
+                { id: 24, type: 'definition', text: 'Payments that may change as interest rates change.', matchId: 23 },
+                { id: 25, type: 'term', text: 'Fixed payments' },
+                { id: 26, type: 'definition', text: 'Payments that do not change even if the mortgage interest rate changes.', matchId: 25 },
+            ];
+
+            let selectedCards = [];
+            let matchedCards = 0;
+
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            function createCards() {
+                const shuffledCards = [...mortgageData];
+                shuffle(shuffledCards);
+                gameContainer.innerHTML = '';
+                matchedContainer.innerHTML = '';
+                shuffledCards.forEach(card => {
+                    const cardElement = document.createElement('div');
+                    cardElement.classList.add('card', card.type);
+                    cardElement.dataset.id = card.id;
+                    cardElement.dataset.type = card.type;
+                    cardElement.dataset.matchId = card.matchId || card.id;
+                    cardElement.innerHTML = `<p>${card.text}</p>`;
+                    cardElement.addEventListener('click', () => handleCardClick(cardElement));
+                    gameContainer.appendChild(cardElement);
+                });
+            }
+
+            function handleCardClick(card) {
+                if (card.classList.contains('matched-pair')) {
+                    return;
+                }
+
+                const index = selectedCards.indexOf(card);
+                if (index > -1) {
+                    // Card is already selected, so deselect it
+                    selectedCards.splice(index, 1);
+                    card.classList.remove('active');
+                    return;
+                }
+
+                // If less than two cards are selected, add this one
+                if (selectedCards.length < 2) {
+                    selectedCards.push(card);
+                    card.classList.add('active');
+                }
+
+                if (selectedCards.length === 2) {
+                    const [card1, card2] = selectedCards;
+                    
+                    if (card1.dataset.matchId === card2.dataset.id || card2.dataset.matchId === card1.dataset.id) {
+                        // Match found
+                        card1.classList.remove('active');
+                        card2.classList.remove('active');
+                        
+                        // Create a new container for the matched pair
+                        const matchedPairGroup = document.createElement('div');
+                        matchedPairGroup.classList.add('matched-pair-group');
+                        
+                        // Move cards to the matched container
+                        card1.classList.add('matched-pair');
+                        card2.classList.add('matched-pair');
+                        matchedPairGroup.appendChild(card1);
+                        matchedPairGroup.appendChild(card2);
+                        matchedContainer.appendChild(matchedPairGroup);
+                        
+                        matchedCards += 2;
+                    } else {
+                        // No match
+                        card1.classList.add('shaking');
+                        card2.classList.add('shaking');
+                        setTimeout(() => {
+                            card1.classList.remove('active', 'shaking');
+                            card2.classList.remove('active', 'shaking');
+                        }, 1000);
+                    }
+                    selectedCards = [];
+                }
+
+                if (matchedCards === mortgageData.length) {
+                    setTimeout(() => {
+                        endPopup.classList.remove('hidden');
+                    }, 500);
+                }
+            }
+
+            function restartGame() {
+                selectedCards = [];
+                matchedCards = 0;
+                endPopup.classList.add('hidden');
+                createCards();
+            }
+
+            restartButton.addEventListener('click', restartGame);
+            createCards();
+        });
+    </script>
+</body>
+</html>
